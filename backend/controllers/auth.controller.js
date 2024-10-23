@@ -7,7 +7,7 @@ export const signup = async (req, res) => {
     const { fullName, username, email, password } = req.body;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // regex for email validation
-    if (emailRegex.test(email)) {
+    if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Invalid email format" });
     }
 
