@@ -7,12 +7,12 @@ export const signup = async (req, res) => {
     const { fullName, username, email, password } = req.body;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // regex for email validation
-    if (!emailRegex.test(email)) {
+    if (emailRegex.test(email)) {
       return res.status(400).json({ error: "Invalid email format" });
     }
 
     const existUser = await User.findOne({ username });
-    if (!existUser) {
+    if (existUser) {
       return res.status(400).json({ error: "Username is already taken" });
     }
 
@@ -39,7 +39,7 @@ export const signup = async (req, res) => {
     }
   } catch (error) {
     console.log("Error on signup", error.message);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
