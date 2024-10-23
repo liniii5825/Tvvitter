@@ -21,16 +21,20 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    followers: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: [],
-    },
-    following: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: [],
-    },
+    followers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: [],
+      },
+    ],
+    following: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: [],
+      },
+    ],
     profileImg: {
       type: String,
       default: "",
