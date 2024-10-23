@@ -21,6 +21,12 @@ export const signup = async (req, res) => {
       return res.status(400).json({ error: "Email is already taken" });
     }
 
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters long" });
+    }
+
     const salt = await bcrypt.genSalt(10); // generate salt for password hashing
     const hashedPassword = await bcrypt.hash(password, salt); // hash the password
 
@@ -34,6 +40,16 @@ export const signup = async (req, res) => {
     if (newUser) {
       generateTokenAndSetCookie(newUser._id, res); // generate token and set cookie
       await newUser.save();
+      res.status(201).json({
+        _id: newUser._id,
+        fullName: newUser.fullName,
+        username: newUser.username,
+        email: newUser.email,
+        followers: newUser.followers,
+        following: newUser.following,
+        profileImg: newUser.profileImg,
+        coverImg: newUser.coverImg,
+      });
     } else {
       return res.status(400).json({ error: "Failed to create user" });
     }
