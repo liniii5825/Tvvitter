@@ -9,6 +9,8 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8000;
 
+app.use(express.json()); // to parse req.body
+
 app.use("/api/auth", authRoutes);
 
 app.listen(port, () => {
