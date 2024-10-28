@@ -1,3 +1,7 @@
+import bcrypt from "bcryptjs";
+import { v2 as cloudinary } from "cloudinary";
+
+// models
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 
@@ -82,4 +86,80 @@ export const getSuggestedUsers = async (req, res) => {
   }
 };
 
-export const updateUserProfile = async (req, res) => {};
+export const updateUser = async (req, res) => {
+  const { bio, currentPassword, email, fullName, link, newPassword, username } =
+    req.body;
+  let { profileImg, coverImg } = req.body;
+  const userId = req.user._id;
+
+  try {
+    // Next few if are to check user and password validity
+    let user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (
+      (!newPassword && currentPassword) ||
+      (newPassword && !currentPassword)
+    ) {
+      // Check if both newPassword and currentPassword are provided
+      return res
+        .status(400)
+        .json({ error: "Please provide both newPassword and currentPassword" });
+    }
+    if (newPassword && currentPassword) {
+      // Check if the current password is correct
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ error: "Invalid current password" });
+      }
+      if (newPassword.length < 6) {
+        return res
+          .status(400)
+          .json({ error: "Password must be at least 6 characters long" });
+      }
+
+      const salt = await bcrypt.genSalt(10); // Generate a salt for password hashing
+      user.password = await bcrypt.hash(newPassword, salt); // Hash the new password
+    }
+
+    if (profileImg) {
+      if (user.profileImg) {
+        await cloudinary.uploader.destroy(
+          user.profileImg.split("/").pop().split(".")[0]
+        ); // find the image name in the url
+      } // Delete the previous image from Cloudinary
+
+      const uploadedResponse = await cloudinary.uploader.upload(profileImg); // Upload the image to Cloudinary
+      profileImg = uploadedResponse.secure_url; // Get the secure_url of the uploaded image
+    }
+
+    if (coverImg) {
+      if (user.coverImg) {
+        await cloudinary.uploader.destroy(
+          user.coverImg.split("/").pop().split(".")[0]
+        );
+      }
+
+      const uploadedResponse = await cloudinary.uploader.upload(coverImg);
+      coverImg = uploadedResponse.secure_url;
+    }
+
+    user.fullName = fullName || user.fullName;
+    user.username = username || user.username;
+    user.email = email || user.email;
+    user.bio = bio || user.bio;
+    user.link = link || user.link;
+    user.profileImg = profileImg || user.profileImg;
+    user.coverImg = coverImg || user.coverImg;
+
+    user = await user.save();
+
+    user.password = null; // Remove the password from response
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.log("Error in updateUser: ", error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
