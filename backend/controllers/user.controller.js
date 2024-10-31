@@ -8,14 +8,14 @@ import Notification from "../models/notification.model.js";
 export const followUnfollowUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const useToModify = await User.findById(id);
+    const userToModify = await User.findById(id);
     const currentUser = await User.findById(req.user._id);
 
     if (id === req.user._id.toString()) {
       // toString() is used to compare the id as a string
       return res.status(400).json({ error: "You cannot follow yourself" });
     }
-    if (!useToModify || !currentUser) {
+    if (!userToModify || !currentUser) {
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -26,7 +26,13 @@ export const followUnfollowUser = async (req, res) => {
       await User.findByIdAndUpdate(req.user._id, { $pull: { following: id } }); // Pull the user from userToModify's following
 
       // Send notification to the user
-      // TODO：Send notification to the user
+      const newNotification = new Notification({
+        from: req.user._id,
+        to: userToModify.id,
+        type: "follow",
+      });
+      await newNotification.save();
+
       res.status(200).json({ message: "User unfollowed successfully" });
     } else {
       // Follow the user
@@ -36,10 +42,11 @@ export const followUnfollowUser = async (req, res) => {
       // Send notification to the user
       const newNotification = new Notification({
         from: req.user._id,
-        to: useToModify.id,
+        to: userToModify.id,
         type: "follow",
       });
-      // TODO: Send notification to the user
+      await newNotification.save();
+
       res.status(200).json({ message: "User followed successfully" });
     }
   } catch (error) {
